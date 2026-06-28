@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator Punktu Rosy</title>
+    <title>Kalkulator Punktu Rosy / Dew Point Calculator</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -22,7 +22,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 2rem 1rem;
+            padding: 1rem 1rem 2rem 1rem;
             display: flex;
             justify-content: center;
             min-height: 100vh;
@@ -35,6 +35,36 @@
             gap: 1.5rem;
             max-width: 800px;
             width: 100%;
+        }
+
+        /* Pasek językowy */
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-bottom: -0.5rem;
+        }
+
+        .lang-btn {
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .lang-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary);
+            color: var(--bg-color);
+            border-color: var(--primary);
         }
 
         .panel-section {
@@ -208,25 +238,30 @@
 
     <div class="app-container">
         
+        <div class="lang-switcher">
+            <button id="langBtnPl" class="lang-btn" onclick="setLanguage('pl')">PL</button>
+            <button id="langBtnEn" class="lang-btn" onclick="setLanguage('en')">EN</button>
+        </div>
+        
         <div class="panel-section top-row">
             <div class="calc-area">
                 <div class="section-header">
-                    <h2>Kalkulator</h2>
+                    <h2 data-i18n="calcTitle">Kalkulator</h2>
                 </div>
                 <div class="input-group">
-                    <input type="text" id="calcInput" placeholder="Wpisz np. 21.5 55 i naciśnij Enter" autocomplete="off">
+                    <input type="text" id="calcInput" autocomplete="off">
                     <div class="error-msg" id="errorMsg"></div>
                 </div>
             </div>
             <div class="result-box">
-                <span class="result-label">Punkt rosy:</span>
+                <span class="result-label" data-i18n="resultLabel">Punkt rosy:</span>
                 <span class="result-value" id="currentResult">-- °C</span>
             </div>
         </div>
 
         <div class="panel-section">
             <div class="section-header">
-                <h2>Wykres zależności (T, RH)</h2>
+                <h2 data-i18n="chartTitle">Wykres zależności (T, RH)</h2>
             </div>
             <div class="chart-container">
                 <canvas id="dewChart"></canvas>
@@ -235,36 +270,91 @@
 
         <div class="panel-section">
             <div class="section-header">
-                <h2>Historia obliczeń <span style="font-size: 0.8rem; color: #a6adc8; font-weight: normal;">(Kliknij wpis, aby podświetlić)</span></h2>
-                <button id="clearHistoryBtn" class="clear-btn">Wyczyść historię</button>
+                <h2>
+                    <span data-i18n="historyTitle">Historia obliczeń</span> 
+                    <span id="historySubtitle" style="font-size: 0.8rem; color: #a6adc8; font-weight: normal;"></span>
+                </h2>
+                <button id="clearHistoryBtn" class="clear-btn" data-i18n="clearBtn">Wyczyść historię</button>
             </div>
             <ul class="history-list" id="historyList"></ul>
         </div>
 
         <div class="panel-section">
             <div class="section-header">
-                <h2>Typowe wartości</h2>
+                <h2 data-i18n="presetsTitle">Typowe wartości</h2>
             </div>
             <ul class="preset-list" id="presetList">
-                <li><button class="preset-btn" data-val="20 50">Komfort (20°C, 50%)</button></li>
-                <li><button class="preset-btn" data-val="24 60">Letni dzień (24°C, 60%)</button></li>
-                <li><button class="preset-btn" data-val="30 80">Tropiki (30°C, 80%)</button></li>
-                <li><button class="preset-btn" data-val="10 90">Chłodno (10°C, 90%)</button></li>
-                <li><button class="preset-btn" data-val="0 100">Mgła (0°C, 100%)</button></li>
-            </ul>
+                </ul>
         </div>
 
     </div>
 
     <script>
+        // Słownik tłumaczeń
+        const i18n = {
+            pl: {
+                calcTitle: "Kalkulator",
+                resultLabel: "Punkt rosy:",
+                chartTitle: "Wykres zależności (T, RH)",
+                historyTitle: "Historia obliczeń",
+                historySubtitle: "(Kliknij wpis, aby podświetlić)",
+                clearBtn: "Wyczyść historię",
+                presetsTitle: "Typowe wartości",
+                placeholder: "Wpisz np. 21.5 55 i naciśnij Enter",
+                errExactValues: "Błąd: Podaj dokładnie dwie wartości rozdzielone spacją.",
+                errNumbers: "Błąd: Wartości muszą być liczbami.",
+                errHumidity: "Błąd: Wilgotność musi być w przedziale 0-100%.",
+                confirmClear: "Czy na pewno chcesz bezpowrotnie usunąć całą historię obliczeń?",
+                lastMeasurement: "Ostatni pomiar",
+                historyMeasurements: "Historia pomiarów",
+                selectedMeasurement: "Wybrany z historii",
+                xAxisTitle: "Temperatura (°C)",
+                yAxisTitle: "Wilgotność Względna (%)",
+                presetComfort: "Komfort",
+                presetSummer: "Letni dzień",
+                presetTropics: "Tropiki",
+                presetCool: "Chłodno",
+                presetFog: "Mgła"
+            },
+            en: {
+                calcTitle: "Calculator",
+                resultLabel: "Dew point:",
+                chartTitle: "Relationship Chart (T, RH)",
+                historyTitle: "Calculation History",
+                historySubtitle: "(Click an entry to highlight)",
+                clearBtn: "Clear history",
+                presetsTitle: "Typical values",
+                placeholder: "Enter e.g. 21.5 55 and press Enter",
+                errExactValues: "Error: Provide exactly two values separated by a space.",
+                errNumbers: "Error: Values must be numbers.",
+                errHumidity: "Error: Humidity must be between 0-100%.",
+                confirmClear: "Are you sure you want to permanently delete the entire calculation history?",
+                lastMeasurement: "Last measurement",
+                historyMeasurements: "Measurement history",
+                selectedMeasurement: "Selected from history",
+                xAxisTitle: "Temperature (°C)",
+                yAxisTitle: "Relative Humidity (%)",
+                presetComfort: "Comfort",
+                presetSummer: "Summer day",
+                presetTropics: "Tropics",
+                presetCool: "Cool",
+                presetFog: "Fog"
+            }
+        };
+
+        // Aktualny język aplikacji (domyślnie polski lub pobrany z localStorage)
+        let currentLang = localStorage.getItem('dewPointLang') || 'pl';
+
         const calcInput = document.getElementById('calcInput');
         const currentResult = document.getElementById('currentResult');
         const errorMsg = document.getElementById('errorMsg');
         const historyList = document.getElementById('historyList');
         const presetList = document.getElementById('presetList');
         const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+        const historySubtitle = document.getElementById('historySubtitle');
 
         let appHistory = [];
+        let selectedPointId = null; // ID zaznaczonego elementu z historii
 
         // Wzór Magnusa-Tetensa
         function calculateDewPoint(temp, hum) {
@@ -274,7 +364,6 @@
             return (b * alpha) / (a - alpha);
         }
 
-        // Wzór odwrócony dla linii izoterm
         function calculateHumidity(temp, dp) {
             const a = 17.27;
             const b = 237.3;
@@ -306,12 +395,12 @@
                 ctx.textBaseline = 'bottom';
 
                 chart.data.datasets.forEach((dataset) => {
-                    if (dataset.label && dataset.label.startsWith('PR =')) {
-                        const firstPoint = dataset.data[0]; // Punkt początkowy (RH = 100%)
+                    if (dataset.label && dataset.label.startsWith('T_d =')) {
+                        const firstPoint = dataset.data[0]; 
                         if (firstPoint) {
                             const pixelX = x.getPixelForValue(firstPoint.x);
                             const pixelY = y.getPixelForValue(firstPoint.y);
-                            const labelText = dataset.label.replace('PR = ', '');
+                            const labelText = dataset.label; // Używa zapisu naukowego "T_d = X°C"
                             ctx.fillText(labelText, pixelX, pixelY - 6);
                         }
                     }
@@ -320,14 +409,14 @@
             }
         };
 
-        // Plugin 2: Dynamiczny margines pod legendą (zapobiega nakładaniu się)
+        // Plugin 2: Dynamiczny margines pod legendą
         const legendMarginPlugin = {
             id: 'legendMargin',
             beforeInit(chart) {
                 const originalFit = chart.legend.fit;
                 chart.legend.fit = function fit() {
                     originalFit.bind(chart.legend)();
-                    this.height += 28; // Dodatkowe 28px marginesu pod legendą unosi ją do góry
+                    this.height += 28; 
                 }
             }
         };
@@ -342,76 +431,31 @@
             plugins: [lineLabelsPlugin, legendMarginPlugin],
             data: {
                 datasets: [
-                    {
-                        label: 'Ostatni pomiar',
-                        data: [], 
-                        backgroundColor: '#a6e3a1', // Zielony
-                        borderColor: '#ffffff',
-                        borderWidth: 1,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        order: 0
-                    },
-                    {
-                        label: 'Historia pomiarów',
-                        data: [], 
-                        backgroundColor: '#89b4fa', // Niebieski
-                        borderColor: 'rgba(255, 255, 255, 0.3)',
-                        borderWidth: 1,
-                        pointRadius: 2.5,
-                        pointHoverRadius: 4,
-                        order: 2
-                    },
-                    {
-                        label: 'Wybrany z historii',
-                        data: [], 
-                        backgroundColor: '#f9e2af', // Żółty podświetlony
-                        borderColor: '#ffffff',
-                        borderWidth: 1.5,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        order: 1
-                    },
-                    // Linie pomocnicze (Krzywe punktu rosy)
-                    { label: 'PR = 25°C', data: generateCurveData(25), borderColor: 'rgba(235, 160, 172, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
-                    { label: 'PR = 20°C', data: generateCurveData(20), borderColor: 'rgba(249, 226, 175, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
-                    { label: 'PR = 15°C', data: generateCurveData(15), borderColor: 'rgba(166, 227, 161, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
-                    { label: 'PR = 10°C', data: generateCurveData(10), borderColor: 'rgba(137, 180, 250, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
-                    { label: 'PR = 5°C', data: generateCurveData(5), borderColor: 'rgba(180, 190, 254, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 }
+                    { label: "", data: [], backgroundColor: '#a6e3a1', borderColor: '#ffffff', borderWidth: 1, pointRadius: 4, pointHoverRadius: 6, order: 0 },
+                    { label: "", data: [], backgroundColor: '#89b4fa', borderColor: 'rgba(255, 255, 255, 0.3)', borderWidth: 1, pointRadius: 2.5, pointHoverRadius: 4, order: 2 },
+                    { label: "", data: [], backgroundColor: '#f9e2af', borderColor: '#ffffff', borderWidth: 1.5, pointRadius: 5, pointHoverRadius: 7, order: 1 },
+                    // Krzywe odniesienia stałego punktu rosy (oznaczenie T_d uniwersalne językowo)
+                    { label: 'T_d = 25°C', data: generateCurveData(25), borderColor: 'rgba(235, 160, 172, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
+                    { label: 'T_d = 20°C', data: generateCurveData(20), borderColor: 'rgba(249, 226, 175, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
+                    { label: 'T_d = 15°C', data: generateCurveData(15), borderColor: 'rgba(166, 227, 161, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
+                    { label: 'T_d = 10°C', data: generateCurveData(10), borderColor: 'rgba(137, 180, 250, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
+                    { label: 'T_d = 5°C', data: generateCurveData(5), borderColor: 'rgba(180, 190, 254, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        top: 10 // Dodatkowy padding wewnętrzny kontenera
-                    }
-                },
+                layout: { padding: { top: 10 } },
                 scales: {
-                    x: {
-                        type: 'linear',
-                        position: 'bottom',
-                        title: { display: true, text: 'Temperatura (°C)', color: '#cdd6f4' },
-                        min: 0,
-                        max: 45,
-                        grid: { color: 'rgba(69, 71, 90, 0.25)' }
-                    },
-                    y: {
-                        title: { display: true, text: 'Wilgotność Względna (%)', color: '#cdd6f4' },
-                        min: 0,
-                        max: 100,
-                        grid: { color: 'rgba(69, 71, 90, 0.25)' }
-                    }
+                    x: { type: 'linear', position: 'bottom', min: 0, max: 45, grid: { color: 'rgba(69, 71, 90, 0.25)' }, title: { display: true } },
+                    y: { min: 0, max: 100, grid: { color: 'rgba(69, 71, 90, 0.25)' }, title: { display: true } }
                 },
                 plugins: {
                     legend: {
                         labels: { 
-                            color: '#cdd6f4', 
-                            usePointStyle: true,
-                            padding: 15, // Rozsunięcie elementów legendy w poziomie/pionie dla lepszej czytelności
+                            color: '#cdd6f4', usePointStyle: true, padding: 15,
                             filter: function(item) {
-                                return ['Ostatni pomiar', 'Historia pomiarów', 'Wybrany z historii'].includes(item.text);
+                                return !item.text.startsWith('T_d =');
                             }
                         }
                     },
@@ -429,14 +473,94 @@
             }
         });
 
-        // Ładowanie historii z localStorage
+        // Funkcja przełączająca język interfejsu
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('dewPointLang', lang);
+
+            // Klasy aktywności na przyciskach języka
+            document.getElementById('langBtnPl').classList.toggle('active', lang === 'pl');
+            document.getElementById('langBtnEn').classList.toggle('active', lang === 'en');
+
+            // Tłumaczenie elementów statycznych posiadających atrybut data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang][key]) el.textContent = i18n[lang][key];
+            });
+
+            // Tłumaczenie specyficznych elementów (placeholder, napisy pomocnicze)
+            calcInput.placeholder = i18n[lang].placeholder;
+            historySubtitle.textContent = i18n[lang].historySubtitle;
+
+            // Aktualizacja tekstów na wykresie
+            chart.options.scales.x.title.text = i18n[lang].xAxisTitle;
+            chart.options.scales.y.title.text = i18n[lang].yAxisTitle;
+            chart.data.datasets[0].label = i18n[lang].lastMeasurement;
+            chart.data.datasets[1].label = i18n[lang].historyMeasurements;
+            chart.data.datasets[2].label = i18n[lang].selectedMeasurement;
+            chart.update();
+
+            // Przeładowanie list dynamicznych (Typowe wartości i Historia)
+            renderPresets();
+            renderHistoryUI();
+        }
+
+        // Renderowanie listy typowych wartości zależnie od języka
+        function renderPresets() {
+            const txt = i18n[currentLang];
+            const presets = [
+                { val: "20 50", label: `${txt.presetComfort} (20°C, 50%)` },
+                { val: "24 60", label: `${txt.presetSummer} (24°C, 60%)` },
+                { val: "30 80", label: `${txt.presetTropics} (30°C, 80%)` },
+                { val: "10 90", label: `${txt.presetCool} (10°C, 90%)` },
+                { val: "0 100", label: `${txt.presetFog} (0°C, 100%)` }
+            ];
+
+            presetList.innerHTML = '';
+            presets.forEach(p => {
+                const li = document.createElement('li');
+                li.innerHTML = `<button class="preset-btn" data-val="${p.val}">${p.label}</button>`;
+                presetList.appendChild(li);
+            });
+        }
+
+        // Przerysowanie listy historii w HTML na bazie struktury danych i wybranego języka
+        function renderHistoryUI() {
+            historyList.innerHTML = '';
+            
+            // Odwracamy pętlę, ponieważ w strukturze danych najnowsze wpisy są na końcu, 
+            // a na liście HTML chcemy je widzieć od góry.
+            for (let i = appHistory.length - 1; i >= 0; i--) {
+                const item = appHistory[i];
+                const li = document.createElement('li');
+                li.className = 'history-item';
+                if (item.id === selectedPointId) li.classList.add('active');
+                li.dataset.id = item.id;
+                li.dataset.t = item.temp;
+                li.dataset.rh = item.hum;
+
+                const paramsSpan = document.createElement('span');
+                paramsSpan.textContent = `T: ${item.temp}°C, RH: ${item.hum}%`;
+                
+                const resultSpan = document.createElement('span');
+                resultSpan.className = 'res-val';
+                resultSpan.textContent = `${currentLang === 'pl' ? 'PR' : 'DP'}: ${item.dp}°C`;
+
+                li.appendChild(paramsSpan);
+                li.appendChild(resultSpan);
+                historyList.appendChild(li);
+            }
+        }
+
+        // Ładowanie i parsowanie danych z localStorage przy startu aplikacji
         function loadHistoryFromStorage() {
             const storedData = localStorage.getItem('dewPointHistory');
             if (storedData) {
                 appHistory = JSON.parse(storedData);
                 
+                // Aktualizacja zbiorów danych wykresu
+                chart.data.datasets[1].data = [];
                 appHistory.forEach((item, index) => {
-                    createHistoryDomElement(item.temp, item.hum, item.dp);
                     if (index === appHistory.length - 1) {
                         chart.data.datasets[0].data = [{ x: item.temp, y: item.hum }];
                         currentResult.textContent = `${item.dp} °C`;
@@ -446,9 +570,10 @@
                 });
                 chart.update();
             }
+            setLanguage(currentLang);
         }
 
-        // Przetwarzanie wejścia
+        // Przetwarzanie danych wejściowych z pola tekstowego
         function processInput(inputValue) {
             errorMsg.textContent = '';
             const normalizedInput = inputValue.trim().replace(/,/g, '.');
@@ -456,7 +581,7 @@
 
             const parts = normalizedInput.split(/\s+/);
             if (parts.length !== 2) {
-                errorMsg.textContent = 'Błąd: Podaj dokładnie dwie wartości rozdzielone spacją.';
+                errorMsg.textContent = i18n[currentLang].errExactValues;
                 return;
             }
 
@@ -464,12 +589,12 @@
             const hum = parseFloat(parts[1]);
 
             if (isNaN(temp) || isNaN(hum)) {
-                errorMsg.textContent = 'Błąd: Wartości muszą być liczbami.';
+                errorMsg.textContent = i18n[currentLang].errNumbers;
                 return;
             }
 
             if (hum < 0 || hum > 100) {
-                errorMsg.textContent = 'Błąd: Wilgotność musi być w przedziale 0-100%.';
+                errorMsg.textContent = i18n[currentLang].errHumidity;
                 return;
             }
 
@@ -478,53 +603,43 @@
             
             currentResult.textContent = `${formattedDP} °C`;
 
+            // Aktualizacja serii na wykresie
             if (chart.data.datasets[0].data.length > 0) {
                 chart.data.datasets[1].data.push(chart.data.datasets[0].data[0]);
             }
             chart.data.datasets[0].data = [{ x: temp, y: hum }];
-            chart.data.datasets[2].data = []; 
+            chart.data.datasets[2].data = []; // Reset podświetlenia
+            selectedPointId = null;
             chart.update();
 
-            createHistoryDomElement(temp, hum, formattedDP);
-            
-            appHistory.push({ temp, hum, dp: formattedDP });
+            // Zapis do struktury danych z unikalnym ID
+            appHistory.push({
+                id: Date.now() + Math.random().toString(36).substr(2, 5),
+                temp,
+                hum,
+                dp: formattedDP
+            });
             localStorage.setItem('dewPointHistory', JSON.stringify(appHistory));
 
+            renderHistoryUI();
             calcInput.value = '';
         }
 
-        function createHistoryDomElement(temp, hum, dp) {
-            document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
-
-            const li = document.createElement('li');
-            li.className = 'history-item';
-            li.dataset.t = temp;
-            li.dataset.rh = hum;
-            
-            const paramsSpan = document.createElement('span');
-            paramsSpan.textContent = `T: ${temp}°C, RH: ${hum}%`;
-            
-            const resultSpan = document.createElement('span');
-            resultSpan.className = 'res-val';
-            resultSpan.textContent = `PR: ${dp}°C`;
-
-            li.appendChild(paramsSpan);
-            li.appendChild(resultSpan);
-            
-            historyList.insertBefore(li, historyList.firstChild);
-        }
-
-        // Klikanie w historię
+        // Obsługa kliknięcia w element historii (Podświetlanie na żółto)
         historyList.addEventListener('click', function(e) {
             const clickedItem = e.target.closest('.history-item');
             if (!clickedItem) return;
 
+            const id = clickedItem.dataset.id;
+
             if (clickedItem.classList.contains('active')) {
                 clickedItem.classList.remove('active');
                 chart.data.datasets[2].data = []; 
+                selectedPointId = null;
             } else {
                 document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
                 clickedItem.classList.add('active');
+                selectedPointId = id;
 
                 const t = parseFloat(clickedItem.dataset.t);
                 const rh = parseFloat(clickedItem.dataset.rh);
@@ -533,11 +648,12 @@
             chart.update();
         });
 
-        // Czyszczenie historii
+        // Czyszczenie historii pomiarów
         clearHistoryBtn.addEventListener('click', function() {
-            if (confirm('Czy na pewno chcesz bezpowrotnie usunąć całą historię obliczeń?')) {
+            if (confirm(i18n[currentLang].confirmClear)) {
                 localStorage.removeItem('dewPointHistory');
                 appHistory = [];
+                selectedPointId = null;
                 chart.data.datasets[0].data = [];
                 chart.data.datasets[1].data = [];
                 chart.data.datasets[2].data = [];
@@ -548,6 +664,7 @@
             }
         });
 
+        // Event Listeners dla klawiatury i presetów
         calcInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 processInput(calcInput.value);
@@ -564,6 +681,7 @@
             }
         });
 
+        // Start aplikacji
         document.addEventListener('DOMContentLoaded', loadHistoryFromStorage);
     </script>
 </body>
