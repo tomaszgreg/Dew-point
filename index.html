@@ -157,7 +157,7 @@
         .history-list {
             list-style: none;
             padding: 0;
-            max-height: 220px;
+            max-height: 250px;
             overflow-y: auto;
             margin: 0;
         }
@@ -171,7 +171,6 @@
             justify-content: space-between;
             align-items: center;
             border: 1px solid var(--border);
-            font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -186,11 +185,27 @@
             background-color: #3b3d54;
         }
 
+        /* Nowe style dla kontenera z informacjami i datą */
+        .hist-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .hist-time {
+            font-size: 0.75rem;
+            color: #7f849c;
+        }
+
+        .hist-params {
+            font-size: 0.95rem;
+        }
+
         .history-item .res-val {
             font-weight: bold;
             color: var(--primary);
-            margin-left: auto;       /* Popycha wynik do prawej strony */
-            margin-right: 1.5rem;    /* Tworzy odstęp od przycisku X */
+            margin-left: auto;
+            margin-right: 1.5rem;
         }
 
         /* Przycisk usuwania pojedynczego wpisu */
@@ -377,7 +392,6 @@
         let appHistory = [];
         let selectedPointId = null;
 
-        // Wzór Magnusa-Tetensa
         function calculateDewPoint(temp, hum) {
             const a = 17.27;
             const b = 237.3;
@@ -404,7 +418,7 @@
             return data;
         }
 
-        // Plugin 1: Etykiety temperatur nad krzywymi
+        // Plugin 1: Etykiety nad krzywymi (bazujące na nowym parametrze isIsotherm)
         const lineLabelsPlugin = {
             id: 'lineLabels',
             afterDatasetsDraw(chart) {
@@ -416,7 +430,7 @@
                 ctx.textBaseline = 'bottom';
 
                 chart.data.datasets.forEach((dataset) => {
-                    if (dataset.label && dataset.label.startsWith('T_d =')) {
+                    if (dataset.isIsotherm) { 
                         const firstPoint = dataset.data[0]; 
                         if (firstPoint) {
                             const pixelX = x.getPixelForValue(firstPoint.x);
@@ -454,12 +468,12 @@
                     { label: "", data: [], backgroundColor: '#a6e3a1', borderColor: '#ffffff', borderWidth: 1, pointRadius: 4, pointHoverRadius: 6, order: 0 },
                     { label: "", data: [], backgroundColor: '#89b4fa', borderColor: 'rgba(255, 255, 255, 0.3)', borderWidth: 1, pointRadius: 2.5, pointHoverRadius: 4, order: 2 },
                     { label: "", data: [], backgroundColor: '#f9e2af', borderColor: '#ffffff', borderWidth: 1.5, pointRadius: 5, pointHoverRadius: 7, order: 1 },
-                    // Izotermy referencyjne
-                    { label: 'T_d = 25°C', data: generateCurveData(25), borderColor: 'rgba(235, 160, 172, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
-                    { label: 'T_d = 20°C', data: generateCurveData(20), borderColor: 'rgba(249, 226, 175, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
-                    { label: 'T_d = 15°C', data: generateCurveData(15), borderColor: 'rgba(166, 227, 161, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
-                    { label: 'T_d = 10°C', data: generateCurveData(10), borderColor: 'rgba(137, 180, 250, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
-                    { label: 'T_d = 5°C', data: generateCurveData(5), borderColor: 'rgba(180, 190, 254, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 }
+                    // Izotermy referencyjne (z flagą isIsotherm i prostymi etykietami)
+                    { label: '25°C', isIsotherm: true, data: generateCurveData(25), borderColor: 'rgba(235, 160, 172, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
+                    { label: '20°C', isIsotherm: true, data: generateCurveData(20), borderColor: 'rgba(249, 226, 175, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
+                    { label: '15°C', isIsotherm: true, data: generateCurveData(15), borderColor: 'rgba(166, 227, 161, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
+                    { label: '10°C', isIsotherm: true, data: generateCurveData(10), borderColor: 'rgba(137, 180, 250, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 },
+                    { label: '5°C', isIsotherm: true, data: generateCurveData(5), borderColor: 'rgba(180, 190, 254, 0.25)', borderWidth: 1.5, showLine: true, pointRadius: 0, tension: 0.4 }
                 ]
             },
             options: {
@@ -474,7 +488,8 @@
                     legend: {
                         labels: { 
                             color: '#cdd6f4', usePointStyle: true, padding: 15,
-                            filter: function(item) { return !item.text.startsWith('T_d ='); }
+                            // Pokazujemy w legendzie tylko 3 pierwsze serie (Nasze pomiary)
+                            filter: function(item) { return item.datasetIndex < 3; }
                         }
                     },
                     tooltip: {
@@ -546,9 +561,32 @@
                 li.dataset.t = item.temp;
                 li.dataset.rh = item.hum;
 
-                const paramsSpan = document.createElement('span');
-                paramsSpan.textContent = `T: ${item.temp}°C, RH: ${item.hum}%`;
-                
+                // Kontener na datę i parametry
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'hist-info';
+
+                // Data / Czas dodania
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'hist-time';
+                if (item.timestamp) {
+                    const dateObj = new Date(item.timestamp);
+                    timeDiv.textContent = dateObj.toLocaleString(currentLang === 'pl' ? 'pl-PL' : 'en-GB', {
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                } else {
+                    timeDiv.textContent = '--'; // Falback dla starych wpisów z localStorage
+                }
+
+                // Parametry (T, RH)
+                const paramsDiv = document.createElement('div');
+                paramsDiv.className = 'hist-params';
+                paramsDiv.textContent = `T: ${item.temp}°C, RH: ${item.hum}%`;
+
+                infoDiv.appendChild(timeDiv);
+                infoDiv.appendChild(paramsDiv);
+
+                // Wynik punktu rosy
                 const resultSpan = document.createElement('span');
                 resultSpan.className = 'res-val';
                 resultSpan.textContent = `${currentLang === 'pl' ? 'PR' : 'DP'}: ${item.dp}°C`;
@@ -559,18 +597,17 @@
                 delBtn.innerHTML = '&times;';
                 delBtn.title = i18n[currentLang].deleteTooltip;
                 delBtn.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Blokuje aktywację/podświetlenie wiersza
+                    e.stopPropagation();
                     deleteHistoryItem(item.id);
                 });
 
-                li.appendChild(paramsSpan);
+                li.appendChild(infoDiv);
                 li.appendChild(resultSpan);
                 li.appendChild(delBtn);
                 historyList.appendChild(li);
             }
         }
 
-        // Synchronizuje wykres i pole wyniku na podstawie zawartości tablicy appHistory
         function syncChartAndResult() {
             chart.data.datasets[0].data = [];
             chart.data.datasets[1].data = [];
@@ -578,7 +615,6 @@
 
             if (appHistory.length > 0) {
                 appHistory.forEach((item, index) => {
-                    // Ostatni element w tablicy to "Najnowszy pomiar" (Zielony)
                     if (index === appHistory.length - 1) {
                         chart.data.datasets[0].data = [{ x: item.temp, y: item.hum }];
                         currentResult.textContent = `${item.dp} °C`;
@@ -586,7 +622,6 @@
                         chart.data.datasets[1].data.push({ x: item.temp, y: item.hum });
                     }
 
-                    // Jeśli dany punkt jest zaznaczony, dodaj go do warstwy żółtej
                     if (item.id === selectedPointId) {
                         chart.data.datasets[2].data = [{ x: item.temp, y: item.hum }];
                     }
@@ -598,16 +633,13 @@
         }
 
         function deleteHistoryItem(id) {
-            // Usunięcie wybranego punktu z pamięci RAM aplikacji
             appHistory = appHistory.filter(item => item.id !== id);
             localStorage.setItem('dewPointHistory', JSON.stringify(appHistory));
 
-            // Jeśli usuwany punkt był podświetlony na żółto, kasujemy flagę
             if (selectedPointId === id) {
                 selectedPointId = null;
             }
 
-            // Pełna przebudowa serii na wykresie i aktualizacja widoków
             syncChartAndResult();
             renderHistoryUI();
         }
@@ -648,10 +680,10 @@
             const dewPoint = calculateDewPoint(temp, hum);
             const formattedDP = dewPoint.toFixed(1);
 
-            // Dodaj nowy punkt na koniec tablicy i wyczyść żółte podświetlenie
             selectedPointId = null;
             appHistory.push({
                 id: Date.now() + Math.random().toString(36).substr(2, 5),
+                timestamp: Date.now(), // Zapisujemy aktualny timestamp (w milisekundach)
                 temp,
                 hum,
                 dp: formattedDP
@@ -663,7 +695,6 @@
             calcInput.value = '';
         }
 
-        // Podświetlanie po kliknięciu na kafelek historii
         historyList.addEventListener('click', function(e) {
             const clickedItem = e.target.closest('.history-item');
             if (!clickedItem) return;
